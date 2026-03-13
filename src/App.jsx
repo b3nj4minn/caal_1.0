@@ -88,6 +88,9 @@ const styles = `
   .list-item-title { font-weight: 600; margin: 0 0 6px 0; font-size: 1rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .list-item-time { font-size: 0.9rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; font-weight: 500;}
 
+  .sidebar-quick-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 0.8rem; color: #007AFF; font-weight: 600; text-decoration: none; padding: 4px 10px; background: rgba(0, 122, 255, 0.1); border-radius: 8px; transition: all 0.2s; width: fit-content; }
+  .sidebar-quick-link:hover { background: rgba(0, 122, 255, 0.2); transform: scale(0.98); }
+
   .empty-state { text-align: center; color: var(--text-muted); padding: 40px 0; font-size: 0.95rem; font-weight: 500; }
 
   /* Cuadrícula Calendario */
@@ -815,6 +818,12 @@ export default function App() {
                           {getIconSvg(event.icon)}
                           <span>{event.time || 'Todo el día'}</span>
                         </div>
+                        {event.link && (
+                          <a href={event.link} target="_blank" rel="noopener noreferrer" className="sidebar-quick-link" onClick={(e) => e.stopPropagation()}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                            Ir a la reunión
+                          </a>
+                        )}
                       </div>
                       <div className={`check-circle ${event.completed ? 'checked' : ''}`} onClick={(e) => toggleEventCompletion(event, e)}>
                         {event.completed && <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>}
@@ -983,7 +992,7 @@ export default function App() {
               {selectedEvent.link && (
                 <a href={selectedEvent.link} target="_blank" rel="noopener noreferrer" className="btn-link">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
-                  Unirse a la Reunión
+                  Ir a la reunión
                 </a>
               )}
 
