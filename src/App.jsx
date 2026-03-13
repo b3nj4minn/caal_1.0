@@ -6,7 +6,8 @@ import {
   signInAnonymously, 
   GoogleAuthProvider,
   signInWithPopup,
-  signInWithCustomToken
+  signInWithCustomToken,
+  signOut
 } from 'firebase/auth';
 import { 
   getFirestore, 
@@ -21,7 +22,7 @@ import {
 // --- ESTILOS GLOBALES ---
 const styles = `
   :root {
-    --app-bg: #F2F7F4;
+    --app-bg: #F5F5F7; /* Gris sutil estilo Apple */
     --card-bg: #ffffff;
     --sidebar-bg: #ffffff;
     --sidebar-text: #1C1C1E;
@@ -39,19 +40,19 @@ const styles = `
 
   /* Login */
   .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--app-bg); font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px;}
-  .login-card { background: white; padding: 48px; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.06); text-align: center; max-width: 400px; width: 100%; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
-  .login-logo { width: 72px; height: 72px; background: #E8F5E9; border-radius: 22px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; color: #2E7D32; }
+  .login-card { background: white; padding: 48px; border-radius: 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.08); text-align: center; max-width: 400px; width: 100%; animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+  .login-logo { width: 72px; height: 72px; background: #E8F5E9; border-radius: 22px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; color: #2E7D32; box-shadow: 0 8px 24px rgba(46, 125, 50, 0.15); }
   .login-card h1 { margin: 0 0 12px; font-size: 2rem; color: var(--text-main); letter-spacing: -0.02em; font-weight: 700; }
   .login-card p { color: var(--text-muted); margin-bottom: 32px; line-height: 1.5; font-size: 1.05rem; }
-  .btn-google { background: white; border: 1.5px solid #E5E5EA; padding: 16px 24px; width: 100%; font-size: 1.05rem; font-weight: 600; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; transition: all 0.2s; }
-  .btn-google:hover { background: #F2F2F7; }
+  .btn-google { background: white; border: 1.5px solid #E5E5EA; padding: 16px 24px; width: 100%; font-size: 1.05rem; font-weight: 600; color: var(--text-main); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+  .btn-google:hover { background: #F2F2F7; transform: scale(0.98); }
   .btn-guest { background: transparent; border: none; padding: 16px 24px; width: 100%; font-size: 1rem; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: all 0.2s; margin-top: 8px; }
   .btn-guest:hover { color: var(--text-main); }
 
   /* App Layout */
   .apple-calendar-wrapper { min-height: 100vh; background-color: var(--app-bg); padding: 24px; display: flex; justify-content: center; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
   .main-layout { display: flex; gap: 24px; width: 100%; max-width: 1400px; align-items: flex-start; }
-  .apple-calendar-container { background-color: var(--card-bg); padding: 32px; border-radius: 32px; flex: 1; box-shadow: 0 8px 30px rgba(0,0,0,0.04); color: var(--text-main); display: flex; flex-direction: column; border: 1px solid rgba(0,0,0,0.02); min-width: 0; }
+  .apple-calendar-container { background-color: var(--card-bg); padding: 32px; border-radius: 32px; flex: 1; box-shadow: 0 12px 48px rgba(0,0,0,0.05); color: var(--text-main); display: flex; flex-direction: column; border: 1px solid rgba(0,0,0,0.03); min-width: 0; transition: box-shadow 0.3s ease; }
   
   .header-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; gap: 16px;}
   .header-title-area { display: flex; flex-direction: column; gap: 4px; }
@@ -69,7 +70,7 @@ const styles = `
   .seg-btn.active { background: var(--card-bg); color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 
   /* Sidebar */
-  .sidebar-list { width: 340px; background-color: var(--sidebar-bg); padding: 32px 24px; border-radius: 32px; box-shadow: 0 8px 30px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.02); display: flex; flex-direction: column; max-height: calc(100vh - 48px); position: sticky; top: 24px; flex-shrink: 0; }
+  .sidebar-list { width: 340px; background-color: var(--sidebar-bg); padding: 32px 24px; border-radius: 32px; box-shadow: 0 12px 48px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.03); display: flex; flex-direction: column; max-height: calc(100vh - 48px); position: sticky; top: 24px; flex-shrink: 0; }
   .sidebar-header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color); }
   .sidebar-header h3 { margin: 0; font-size: 1.4rem; font-weight: 700; }
   .sidebar-header p { margin: 4px 0 0; color: var(--sidebar-muted); font-size: 0.95rem; font-weight: 500;}
@@ -78,8 +79,8 @@ const styles = `
   .events-list-container::-webkit-scrollbar { width: 4px; }
   .events-list-container::-webkit-scrollbar-thumb { background: #E5E5EA; border-radius: 4px; }
 
-  .list-item { padding: 16px; border-radius: 20px; display: flex; gap: 14px; align-items: center; cursor: pointer; transition: all 0.2s; background: #F9F9FB; border: 1px solid #E5E5EA; }
-  .list-item:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.04); }
+  .list-item { padding: 16px; border-radius: 20px; display: flex; gap: 14px; align-items: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); background: #F9F9FB; border: 1px solid #E5E5EA; }
+  .list-item:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); border-color: #D1D1D6; }
   .list-item-date { background: var(--card-bg); border-radius: 14px; min-width: 52px; padding: 8px 0; text-align: center; display: flex; flex-direction: column; color: var(--text-main); box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #E5E5EA; }
   .list-item-date .day { font-size: 1.2rem; font-weight: 700; }
   .list-item-date .month { font-size: 0.7rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); }
@@ -93,20 +94,20 @@ const styles = `
   .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; flex: 1; }
   .day-name { text-align: right; font-weight: 600; color: var(--text-muted); font-size: 0.8rem; text-transform: uppercase; padding-bottom: 4px; padding-right: 12px; }
   
-  .day-cell { background: var(--card-bg); border-radius: 16px; min-height: 130px; padding: 8px; border: 1px solid #E5E5EA; display: flex; flex-direction: column; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.01); overflow: hidden; }
+  .day-cell { background: var(--card-bg); border-radius: 16px; min-height: 130px; padding: 8px; border: 1px solid rgba(229, 229, 234, 0.6); display: flex; flex-direction: column; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); box-shadow: 0 2px 6px rgba(0,0,0,0.02); overflow: hidden; }
   .day-cell.current-month { cursor: pointer; }
-  .day-cell.current-month:hover { border-color: #C7C7CC; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05); transform: translateY(-1px); z-index: 10; }
+  .day-cell.current-month:hover { border-color: #C7C7CC; box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08); transform: translateY(-2px); z-index: 10; }
   .day-cell.faded { background: #F9F9FB; opacity: 0.6; cursor: pointer; }
   .day-cell.faded:hover { background: #F2F2F7; opacity: 0.8; }
-  .day-cell.is-today-cell { border: 2px solid var(--accent); background: #F2FBF4; } 
+  .day-cell.is-today-cell { border: 2px solid var(--accent); background: #F2FBF4; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.1); } 
   
   .day-number { font-weight: 600; font-size: 1.05rem; margin-bottom: 8px; color: var(--text-main); width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 50%; align-self: flex-end; flex-shrink:0;}
   .day-number.today { background: var(--today-bg); color: white; }
 
   .events-container { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; flex: 1; padding-right: 2px; }
   .events-container::-webkit-scrollbar { width: 0px; } 
-  .event-pill { border-radius: 8px; padding: 4px 8px; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; color: var(--text-main); cursor: pointer; border: 1px solid rgba(0,0,0,0.03); flex-shrink: 0; }
-  .event-pill:hover { filter: brightness(0.95); }
+  .event-pill { border-radius: 8px; padding: 4px 8px; font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 6px; color: var(--text-main); cursor: pointer; border: 1px solid rgba(0,0,0,0.03); flex-shrink: 0; transition: transform 0.1s ease; }
+  .event-pill:hover { filter: brightness(0.95); transform: scale(0.98); }
   .event-icon-small { display: flex; align-items: center; opacity: 0.8; flex-shrink: 0;}
   .event-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   
@@ -119,10 +120,10 @@ const styles = `
   .bg-pastel-yellow { background-color: #FFF8E1; color: #F57F17; }
   .bg-pastel-purple { background-color: #F3E5F5; color: #7B1FA2; }
 
-  /* Modales */
-  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.25); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.3s ease; padding: 20px;}
+  /* Modales - Efecto Glassmorphism Refinado */
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 1000; animation: fadeIn 0.3s ease; padding: 20px;}
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-  .modal-content { background: #ffffff; padding: 40px; border-radius: 36px; width: 100%; max-width: 460px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.12); animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90vh; overflow-y: auto;}
+  .modal-content { background: #ffffff; padding: 40px; border-radius: 36px; width: 100%; max-width: 460px; box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15); animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90vh; overflow-y: auto;}
   .modal-content h3 { margin-top: 0; margin-bottom: 4px; font-size: 1.6rem; color: var(--text-main); font-weight: 700; letter-spacing: -0.02em; }
   .modal-subtitle { color: var(--text-muted); font-size: 1rem; margin-bottom: 24px; font-weight: 500; }
 
@@ -138,33 +139,37 @@ const styles = `
 
   .form-group { margin-bottom: 16px; }
   .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; color: var(--text-muted); letter-spacing: 0.2px; }
-  .apple-input { width: 100%; padding: 14px 18px; border-radius: 16px; border: 1px solid #E5E5EA; font-size: 1.05rem; box-sizing: border-box; font-family: inherit; transition: all 0.2s; background: #F9F9FB; color: var(--text-main); font-weight: 500; }
-  .apple-input:focus { outline: none; border-color: var(--accent); background: #ffffff; box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.15); }
+  .apple-input { width: 100%; padding: 14px 18px; border-radius: 16px; border: 1px solid #E5E5EA; font-size: 1.05rem; box-sizing: border-box; font-family: inherit; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); background: #F9F9FB; color: var(--text-main); font-weight: 500; }
+  .apple-input:focus { outline: none; border-color: var(--accent); background: #ffffff; box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.15); transform: translateY(-1px); }
   .notes-input { resize: vertical; min-height: 90px; line-height: 1.5; }
 
   .icon-options, .color-options { display: flex; gap: 10px; flex-wrap: wrap; }
   .icon-circle { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; background: #F2F2F7; border: 2px solid transparent; transition: all 0.2s; color: var(--text-main); }
-  .icon-circle:hover { background: #E5E5EA; }
-  .icon-circle.selected { border-color: var(--accent); background: #E8F5E9; color: var(--accent); }
+  .icon-circle:hover { background: #E5E5EA; transform: scale(1.05); }
+  .icon-circle.selected { border-color: var(--accent); background: #E8F5E9; color: var(--accent); transform: scale(1.1); }
   .color-circle { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.2s; }
   .color-circle:hover { transform: scale(1.1); }
-  .color-circle.selected { border-color: var(--text-main); transform: scale(1.15); }
+  .color-circle.selected { border-color: var(--text-main); transform: scale(1.15); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
   .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 32px; }
-  .btn { border: none; padding: 12px 24px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: all 0.2s; border-radius: 999px; }
+  .btn { border: none; padding: 12px 24px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); border-radius: 999px; }
   .btn-cancel { background: #F2F2F7; color: var(--text-main); }
-  .btn-cancel:hover { background: #E5E5EA; }
-  .btn-save { background: var(--accent); color: white; text-decoration: none;}
-  .btn-save:hover { filter: brightness(0.95); transform: translateY(-1px); }
+  .btn-cancel:hover { background: #E5E5EA; transform: scale(0.98); }
+  .btn-save { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2); }
+  .btn-save:hover { filter: brightness(0.95); transform: translateY(-1px) scale(0.98); box-shadow: 0 6px 16px rgba(52, 199, 89, 0.3); }
   
+  /* Botón especial para Enlaces */
+  .btn-link { background: #F2F2F7; color: #007AFF; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; margin-bottom: 20px; font-weight: 600; padding: 14px; border-radius: 16px; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+  .btn-link:hover { background: #E5E5EA; color: #0056b3; transform: scale(0.98); }
+
   .view-event-header { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
-  .view-event-icon { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 20px; flex-shrink: 0; }
+  .view-event-icon { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 20px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
   .view-event-title { font-size: 1.4rem; font-weight: 700; margin: 0 0 4px 0; color: var(--text-main); letter-spacing: -0.01em;}
   .view-event-time { color: var(--text-muted); font-weight: 500; font-size: 1rem; margin: 0; }
   .view-notes-box { background: #F9F9FB; border: 1px solid #E5E5EA; border-radius: 16px; padding: 20px; margin: 20px 0; font-size: 1rem; color: var(--text-main); line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
 
   .btn-danger { background: #FFF0F0; color: var(--danger); width: 100%; margin-top: 16px; font-weight: 600; }
-  .btn-danger:hover { background: #FFE5E5; }
+  .btn-danger:hover { background: #FFE5E5; transform: scale(0.98); }
 
   /* Nuevos Estilos - Progreso y Tareas Completadas */
   .event-pill.completed { opacity: 0.5; text-decoration: line-through; filter: grayscale(0.3); }
@@ -172,10 +177,10 @@ const styles = `
   .list-item.completed .list-item-title { text-decoration: line-through; color: var(--text-muted); }
   
   .check-circle { width: 26px; height: 26px; border-radius: 50%; border: 2px solid #C7C7CC; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; flex-shrink: 0; background: white; }
-  .check-circle:hover { border-color: var(--accent); }
+  .check-circle:hover { border-color: var(--accent); transform: scale(1.1); }
   .check-circle.checked { background: var(--accent); border-color: var(--accent); color: white; }
 
-  .progress-card { background: #F9F9FB; padding: 20px; border-radius: 24px; border: 1px solid var(--border-color); margin-bottom: 24px; }
+  .progress-card { background: #F9F9FB; padding: 20px; border-radius: 24px; border: 1px solid var(--border-color); margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
   .progress-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; }
   .progress-title { font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin: 0; }
   .progress-stats { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
@@ -235,7 +240,7 @@ const PASTEL_COLORS = [
   { name: 'Lavanda', class: 'bg-pastel-purple', hex: '#F3E5F5', text: '#7B1FA2' }
 ];
 
-// Iconos
+// Iconos (Reintegrando el ícono de Link)
 const ICONS = [
   { id: 'gavel', name: 'Audiencia', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg> },
   { id: 'scale', name: 'Asesoría', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v18"/><rect width="4" height="2" x="10" y="21" rx="1"/><path d="M3 7h18"/><path d="M4 7l-2 5a2 2 0 0 0 4 0l-2-5Z"/><path d="M20 7l-2 5a2 2 0 0 0 4 0l-2-5Z"/></svg> },
@@ -273,34 +278,66 @@ export default function App() {
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedEvent, setSelectedEvent] = useState(null);
   
   const [newEvent, setNewEvent] = useState({
-    title: '', time: '', notes: '', link: '', color: PASTEL_COLORS[0].class, icon: ICONS[0].id, completed: false
+    title: '', time: '', link: '', notes: '', color: PASTEL_COLORS[0].class, icon: ICONS[0].id, completed: false
   });
 
   const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '' });
 
-  // Autenticación inicial
+  // 1. SISTEMA DE LIMPIEZA AUTOMÁTICA (CADA 5 MINUTOS)
   useEffect(() => {
-    const initAuth = async () => {
-      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-        try {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } catch (error) {
-          console.error("Error with custom token auth:", error);
+    const cleanCache = () => {
+      console.log("🧹 Ejecutando limpieza automática de caché y basura...");
+      Object.keys(localStorage).forEach(key => {
+        if (!key.startsWith('firebase:')) {
+          localStorage.removeItem(key);
         }
-      } else {
-        try {
-          await signInAnonymously(auth);
-        } catch(error){
-          console.error("Error with anonymous auth:", error);
-        }
-      }
+      });
     };
-    initAuth();
-    
+    const cleanupInterval = setInterval(cleanCache, 5 * 60 * 1000);
+    return () => clearInterval(cleanupInterval);
+  }, []);
+
+  // 2. SISTEMA DE NOTIFICACIONES (10 MIN ANTES)
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    const checkUpcomingMeetings = () => {
+      const now = new Date();
+      events.forEach(event => {
+        if (!event.time) return; 
+        
+        const eventDate = new Date(event.date);
+        if (eventDate.toDateString() !== now.toDateString()) return;
+
+        const [hours, minutes] = event.time.split(':').map(Number);
+        const eventTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
+        
+        const diffMs = eventTime - now;
+        const diffMins = Math.round(diffMs / 60000);
+
+        if (diffMins === 10) {
+          if ("Notification" in window && Notification.permission === "granted") {
+            new Notification(`¡Reunión en 10 min!`, {
+              body: `${event.title} comenzará a las ${event.time}`,
+              icon: "📅"
+            });
+          }
+        }
+      });
+    };
+
+    const notifyInterval = setInterval(checkUpcomingMeetings, 60000);
+    return () => clearInterval(notifyInterval);
+  }, [events, user]);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setIsLoggingIn(false);
@@ -308,7 +345,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // Carga de datos
   useEffect(() => {
     if (!user) return;
     const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info');
@@ -332,7 +368,6 @@ export default function App() {
     return () => { unsubProfile(); unsubEvents(); };
   }, [user]);
 
-  // Saludo
   useEffect(() => {
     const hour = new Date().getHours();
     if (hour < 12) setGreeting('Buenos días ☀️');
@@ -340,12 +375,15 @@ export default function App() {
     else setGreeting('Buenas noches 🌙');
   }, []);
 
+  // --- LÓGICA DE LOGIN ADAPTADA ---
   const handleLogin = async () => {
     setIsLoggingIn(true);
     try {
+      // Uso del token de la vista previa para asegurar permisos
       if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
         await signInWithCustomToken(auth, __initial_auth_token);
       } else {
+        // Fallback si corre en entorno aislado sin popup
         await signInAnonymously(auth);
       }
     } catch (error) { 
@@ -358,6 +396,28 @@ export default function App() {
     setIsLoggingIn(true);
     try { await signInAnonymously(auth); } 
     catch (error) { console.error(error); setIsLoggingIn(false); }
+  };
+
+  const handleGoogleUpgrade = async () => {
+    setIsLoggingIn(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+      setIsSettingsModalOpen(false);
+    } catch (error) {
+      console.warn("Error al iniciar sesión con Google:", error);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      setIsSettingsModalOpen(false);
+    } catch (error) {
+      console.error("Error al cerrar sesión", error);
+    }
   };
 
   const saveProfile = async (e) => {
@@ -420,7 +480,7 @@ export default function App() {
   const closeAddModal = () => {
     setIsAddModalOpen(false);
     setTimeout(() => { 
-      setNewEvent({ title: '', time: '', notes: '', link: '', color: PASTEL_COLORS[0].class, icon: ICONS[0].id, completed: false }); 
+      setNewEvent({ title: '', time: '', link: '', notes: '', color: PASTEL_COLORS[0].class, icon: ICONS[0].id, completed: false }); 
       setSelectedDate('');
     }, 200);
   };
@@ -487,6 +547,55 @@ export default function App() {
         return (a.time || '24:00').localeCompare(b.time || '24:00');
       });
   };
+
+  // --- VISTAS ---
+  if (!user) {
+    return (
+      <div className="login-screen">
+        <style>{styles}</style>
+        <div className="login-card">
+          <div className="login-logo">{React.cloneElement(ICONS[1].svg, { width: 36, height: 36 })}</div>
+          <h1>Caal</h1>
+          <p>Organiza tus audiencias y clientes en un entorno diseñado para tu tranquilidad.</p>
+          <button className="btn-google pill" onClick={handleLogin} disabled={isLoggingIn}>
+            <svg width="24" height="24" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            {isLoggingIn ? 'Iniciando...' : 'Ingresar con cuenta principal'}
+          </button>
+          <button className="btn-guest pill" onClick={handleGuestLogin} disabled={isLoggingIn}>
+            Continuar como invitado
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (needsProfile) {
+    return (
+      <div className="login-screen">
+        <style>{styles}</style>
+        <div className="login-card">
+          <h1>¡Hola!</h1>
+          <p>Para personalizar tu calendario, ¿cómo te llamas?</p>
+          <form onSubmit={saveProfile}>
+            <div className="form-group" style={{ textAlign: 'left' }}>
+              <label>Nombre</label>
+              <input className="apple-input" type="text" value={profileForm.firstName} onChange={e => setProfileForm({...profileForm, firstName: e.target.value})} placeholder="Ej. Carlos" required autoFocus />
+            </div>
+            <div className="form-group" style={{ textAlign: 'left' }}>
+              <label>Apellido</label>
+              <input className="apple-input" type="text" value={profileForm.lastName} onChange={e => setProfileForm({...profileForm, lastName: e.target.value})} placeholder="Ej. Ramírez" />
+            </div>
+            <button type="submit" className="btn-save pill" style={{ width: '100%', marginTop: '16px', padding: '16px' }}>Comenzar</button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   const renderCells = () => {
     const year = currentDate.getFullYear();
@@ -581,17 +690,17 @@ export default function App() {
 
   const currentMonthEventsList = getCurrentMonthEvents();
 
-  // Progreso semanal alineado (Empezando en Domingo)
+  // Calcular el progreso de la semana actual
   const getWeeklyProgress = () => {
     const now = new Date();
-    const dayOfWeek = now.getDay(); // 0 es Domingo, 1 es Lunes, etc.
-    const diffToSunday = now.getDate() - dayOfWeek;
+    const dayOfWeek = now.getDay();
+    const diffToMonday = now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
     
-    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diffToSunday);
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diffToMonday);
     startOfWeek.setHours(0, 0, 0, 0);
     
     const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6); // Sábado
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
     endOfWeek.setHours(23, 59, 59, 999);
 
     const weeklyEvents = events.filter(e => {
@@ -607,54 +716,6 @@ export default function App() {
   };
 
   const weeklyStats = getWeeklyProgress();
-
-  if (!user) {
-    return (
-      <div className="login-screen">
-        <style>{styles}</style>
-        <div className="login-card">
-          <div className="login-logo">{React.cloneElement(ICONS[1].svg, { width: 36, height: 36 })}</div>
-          <h1>Caal</h1>
-          <p>Organiza tus audiencias y clientes en un entorno diseñado para tu tranquilidad.</p>
-          <button className="btn-google pill" onClick={handleLogin} disabled={isLoggingIn}>
-            <svg width="24" height="24" viewBox="0 0 24 24">
-              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            {isLoggingIn ? 'Iniciando...' : 'Ingresar con cuenta principal'}
-          </button>
-          <button className="btn-guest pill" onClick={handleGuestLogin} disabled={isLoggingIn}>
-            Continuar como invitado
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (needsProfile) {
-    return (
-      <div className="login-screen">
-        <style>{styles}</style>
-        <div className="login-card">
-          <h1>¡Hola!</h1>
-          <p>Para personalizar tu calendario, ¿cómo te llamas?</p>
-          <form onSubmit={saveProfile}>
-            <div className="form-group" style={{ textAlign: 'left' }}>
-              <label>Nombre</label>
-              <input className="apple-input" type="text" value={profileForm.firstName} onChange={e => setProfileForm({...profileForm, firstName: e.target.value})} placeholder="Ej. Carlos" required autoFocus />
-            </div>
-            <div className="form-group" style={{ textAlign: 'left' }}>
-              <label>Apellido</label>
-              <input className="apple-input" type="text" value={profileForm.lastName} onChange={e => setProfileForm({...profileForm, lastName: e.target.value})} placeholder="Ej. Ramírez" />
-            </div>
-            <button type="submit" className="btn-save pill" style={{ width: '100%', marginTop: '16px', padding: '16px' }}>Comenzar</button>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -681,6 +742,9 @@ export default function App() {
                   <button className={`seg-btn ${activeNav === 'today' ? 'active' : ''}`} onClick={handleToday}>Hoy</button>
                   <button className={`seg-btn ${activeNav === 'next' ? 'active' : ''}`} onClick={handleNextMonth}>Sig</button>
                 </div>
+                <button className="seg-btn pill" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F2F2F7', width: '36px', height: '36px', padding: 0, marginLeft: '8px' }} onClick={() => setIsSettingsModalOpen(true)} title="Ajustes">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
               </div>
             </div>
 
@@ -737,9 +801,41 @@ export default function App() {
 
         </div>
 
+        {/* --- MODAL AJUSTES --- */}
+        {isSettingsModalOpen && (
+          <div className="modal-overlay" onClick={() => setIsSettingsModalOpen(false)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <h3>Ajustes de Cuenta</h3>
+              {user?.isAnonymous ? (
+                <>
+                  <p className="modal-subtitle">Estás usando una cuenta de invitado. Tus datos podrían perderse si cambias de dispositivo.</p>
+                  <button className="btn-google pill" onClick={handleGoogleUpgrade} disabled={isLoggingIn}>
+                    <svg width="24" height="24" viewBox="0 0 24 24">
+                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    </svg>
+                    {isLoggingIn ? 'Conectando...' : 'Iniciar sesión con Google'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="modal-subtitle">Has iniciado sesión correctamente. Tus datos están respaldados en la nube.</p>
+                  <button className="btn-danger pill" style={{width: '100%', padding: '16px'}} onClick={handleSignOut}>Cerrar sesión</button>
+                </>
+              )}
+              
+              <div className="modal-actions" style={{ marginTop: '24px' }}>
+                <button type="button" className="btn btn-cancel pill" onClick={() => setIsSettingsModalOpen(false)}>Cerrar</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* --- MODAL TUTORIAL --- */}
         {showTutorial && (
-          <div className="modal-overlay" style={{ zIndex: 2000, backdropFilter: 'blur(10px)' }}>
+          <div className="modal-overlay">
             <div className="modal-content tutorial-card">
               <h2 className="tutorial-title">Novedades en<br/>Caal</h2>
               
@@ -757,6 +853,14 @@ export default function App() {
                   <div className="feature-text">
                     <h4>Enlaces Virtuales</h4>
                     <p>Ahora puedes pegar tus enlaces de Zoom, Meet o Teams y unirte con un clic directamente desde el evento.</p>
+                  </div>
+                </div>
+
+                <div className="feature-row">
+                  <div className="feature-icon" style={{ color: '#FF9500' }}>{ICONS[0].svg}</div>
+                  <div className="feature-text">
+                    <h4>Limpieza Automática</h4>
+                    <p>La aplicación libera memoria caché silenciosamente para mantener tu dispositivo rápido.</p>
                   </div>
                 </div>
               </div>
@@ -850,7 +954,7 @@ export default function App() {
               </div>
 
               {selectedEvent.link && (
-                <a href={selectedEvent.link} target="_blank" rel="noopener noreferrer" className="btn btn-save pill" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', width: '100%', marginBottom: '20px' }}>
+                <a href={selectedEvent.link} target="_blank" rel="noopener noreferrer" className="btn-link">
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                   Unirse a la Reunión
                 </a>
@@ -862,7 +966,7 @@ export default function App() {
                 </div>
               )}
 
-              <div className={`event-pill ${selectedEvent.color} pill`} style={{ justifyContent: 'center', padding: '12px', fontSize: '1rem', cursor: 'default', marginTop: selectedEvent.notes ? '0' : '20px' }}>
+              <div className={`event-pill ${selectedEvent.color} pill`} style={{ justifyContent: 'center', padding: '12px', fontSize: '1rem', cursor: 'default', marginTop: (selectedEvent.notes || selectedEvent.link) ? '0' : '20px' }}>
                 {PASTEL_COLORS.find(c => c.class === selectedEvent.color)?.name || 'Evento'}
               </div>
 
