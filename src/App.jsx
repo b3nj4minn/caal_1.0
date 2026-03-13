@@ -88,8 +88,8 @@ const styles = `
   .list-item-title { font-weight: 600; margin: 0 0 6px 0; font-size: 1rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .list-item-time { font-size: 0.9rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; font-weight: 500;}
 
-  .sidebar-quick-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 0.8rem; color: #007AFF; font-weight: 600; text-decoration: none; padding: 4px 10px; background: rgba(0, 122, 255, 0.1); border-radius: 8px; transition: all 0.2s; width: fit-content; }
-  .sidebar-quick-link:hover { background: rgba(0, 122, 255, 0.2); transform: scale(0.98); }
+  .sidebar-quick-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 8px; font-size: 0.8rem; color: var(--accent); font-weight: 600; text-decoration: none; padding: 4px 10px; background: rgba(0, 0, 0, 0.04); border-radius: 8px; transition: all 0.2s; width: fit-content; }
+  .sidebar-quick-link:hover { background: rgba(0, 0, 0, 0.08); transform: scale(0.98); }
 
   .empty-state { text-align: center; color: var(--text-muted); padding: 40px 0; font-size: 0.95rem; font-weight: 500; }
 
@@ -158,12 +158,12 @@ const styles = `
   .btn { border: none; padding: 12px 24px; font-weight: 600; cursor: pointer; font-size: 1rem; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); border-radius: 999px; }
   .btn-cancel { background: #F2F2F7; color: var(--text-main); }
   .btn-cancel:hover { background: #E5E5EA; transform: scale(0.98); }
-  .btn-save { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(52, 199, 89, 0.2); }
-  .btn-save:hover { filter: brightness(0.95); transform: translateY(-1px) scale(0.98); box-shadow: 0 6px 16px rgba(52, 199, 89, 0.3); }
+  .btn-save { background: var(--accent); color: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); text-decoration: none;}
+  .btn-save:hover { filter: brightness(0.95); transform: translateY(-1px) scale(0.98); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15); }
   
   /* Botón especial para Enlaces */
-  .btn-link { background: #F2F2F7; color: #007AFF; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; margin-bottom: 20px; font-weight: 600; padding: 14px; border-radius: 16px; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
-  .btn-link:hover { background: #E5E5EA; color: #0056b3; transform: scale(0.98); }
+  .btn-link { background: #F2F2F7; color: var(--accent); display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; margin-bottom: 20px; font-weight: 600; padding: 14px; border-radius: 16px; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid rgba(0,0,0,0.05);}
+  .btn-link:hover { background: #E5E5EA; filter: brightness(0.95); transform: scale(0.98); }
 
   .view-event-header { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
   .view-event-icon { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; border-radius: 20px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
@@ -234,7 +234,17 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'calendario-mediaciones-46593';
 
-// Colores Pasteles
+// Colores del Tema Principal
+const APP_THEMES = [
+  { name: 'Verde (Por defecto)', hex: '#34C759' },
+  { name: 'Azul', hex: '#007AFF' },
+  { name: 'Índigo', hex: '#5856D6' },
+  { name: 'Naranja', hex: '#FF9500' },
+  { name: 'Rojo', hex: '#FF3B30' },
+  { name: 'Rosa', hex: '#FF2D55' }
+];
+
+// Colores Pasteles para Eventos
 const PASTEL_COLORS = [
   { name: 'Verde Manzana', class: 'bg-pastel-green', hex: '#E8F5E9', text: '#2E7D32' },
   { name: 'Azul Cielo', class: 'bg-pastel-blue', hex: '#E3F2FD', text: '#1565C0' },
@@ -243,7 +253,7 @@ const PASTEL_COLORS = [
   { name: 'Lavanda', class: 'bg-pastel-purple', hex: '#F3E5F5', text: '#7B1FA2' }
 ];
 
-// Iconos (Reintegrando el ícono de Link)
+// Iconos
 const ICONS = [
   { id: 'gavel', name: 'Audiencia', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m14.5 12.5-8 8a2.119 2.119 0 1 1-3-3l8-8"/><path d="m16 16 6-6"/><path d="m8 8 6-6"/><path d="m9 7 8 8"/><path d="m21 11-8-8"/></svg> },
   { id: 'scale', name: 'Asesoría', svg: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v18"/><rect width="4" height="2" x="10" y="21" rx="1"/><path d="M3 7h18"/><path d="M4 7l-2 5a2 2 0 0 0 4 0l-2-5Z"/><path d="M20 7l-2 5a2 2 0 0 0 4 0l-2-5Z"/></svg> },
@@ -272,6 +282,7 @@ export default function App() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [needsProfile, setNeedsProfile] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [appTheme, setAppTheme] = useState(APP_THEMES[0].hex);
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -304,6 +315,12 @@ export default function App() {
     const cleanupInterval = setInterval(cleanCache, 5 * 60 * 1000);
     return () => clearInterval(cleanupInterval);
   }, []);
+
+  // Aplicar tema dinámicamente
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent', appTheme);
+    document.documentElement.style.setProperty('--today-bg', appTheme);
+  }, [appTheme]);
 
   // 2. SISTEMA DE NOTIFICACIONES (10 MIN ANTES)
   useEffect(() => {
@@ -355,6 +372,7 @@ export default function App() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setProfile(data);
+        if (data.theme) setAppTheme(data.theme);
         setNeedsProfile(false);
         if (!data.tutorialSeen) setShowTutorial(true);
       } else {
@@ -431,10 +449,21 @@ export default function App() {
       await setDoc(profileRef, {
         firstName: profileForm.firstName,
         lastName: profileForm.lastName,
-        tutorialSeen: false
-      });
+        tutorialSeen: false,
+        theme: appTheme
+      }, { merge: true });
       setNeedsProfile(false);
     } catch (error) { console.error(error); }
+  };
+
+  const changeAppTheme = async (hex) => {
+    setAppTheme(hex);
+    if (user) {
+      try {
+        const profileRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'info');
+        await setDoc(profileRef, { theme: hex }, { merge: true });
+      } catch (error) { console.error(error); }
+    }
   };
 
   const finishTutorial = async () => {
@@ -841,7 +870,27 @@ export default function App() {
         {isSettingsModalOpen && (
           <div className="modal-overlay" onClick={() => setIsSettingsModalOpen(false)}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <h3>Ajustes de Cuenta</h3>
+              <h3>Ajustes</h3>
+              
+              <div style={{ marginBottom: '32px', marginTop: '16px' }}>
+                <h4 style={{ fontSize: '1.1rem', margin: '0 0 12px 0', color: 'var(--text-main)' }}>Apariencia</h4>
+                <p className="modal-subtitle" style={{ marginBottom: '16px' }}>Elige el color principal de la aplicación.</p>
+                <div className="color-options">
+                  {APP_THEMES.map(theme => (
+                    <div 
+                      key={theme.hex} 
+                      className={`color-circle ${appTheme === theme.hex ? 'selected' : ''}`} 
+                      style={{ backgroundColor: theme.hex, borderColor: appTheme === theme.hex ? 'var(--text-main)' : 'transparent' }}
+                      onClick={() => changeAppTheme(theme.hex)} 
+                      title={theme.name} 
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ height: '1px', background: 'var(--border-color)', margin: '24px 0' }}></div>
+
+              <h4 style={{ fontSize: '1.1rem', margin: '0 0 12px 0', color: 'var(--text-main)' }}>Cuenta</h4>
               {user?.isAnonymous ? (
                 <>
                   <p className="modal-subtitle">Estás usando una cuenta de invitado. Tus datos podrían perderse si cambias de dispositivo.</p>
