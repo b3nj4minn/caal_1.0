@@ -283,7 +283,7 @@ export default function App() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   
   const [newEvent, setNewEvent] = useState({
-    title: '', time: '', link: '', notes: '', color: PASTEL_COLORS[0].class, icon: ICONS[0].id, completed: false
+    id: null, title: '', time: '', link: '', notes: '', color: PASTEL_COLORS[0].class, icon: ICONS[0].id, completed: false
   });
 
   const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '' });
@@ -480,7 +480,7 @@ export default function App() {
   const closeAddModal = () => {
     setIsAddModalOpen(false);
     setTimeout(() => { 
-      setNewEvent({ title: '', time: '', link: '', notes: '', color: PASTEL_COLORS[0].class, icon: ICONS[0].id, completed: false }); 
+      setNewEvent({ id: null, title: '', time: '', link: '', notes: '', color: PASTEL_COLORS[0].class, icon: ICONS[0].id, completed: false }); 
       setSelectedDate('');
     }, 200);
   };
@@ -488,13 +488,19 @@ export default function App() {
   const handleSaveEvent = async (e) => {
     e.preventDefault();
     if (!newEvent.title || !user || !selectedDate) return;
-    const eventId = Date.now().toString();
+    const eventId = newEvent.id || Date.now().toString();
     
     const [y, m, d] = selectedDate.split('-');
     
     const eventToAdd = {
       date: new Date(y, m - 1, d).toDateString(),
-      ...newEvent
+      title: newEvent.title,
+      time: newEvent.time,
+      link: newEvent.link,
+      notes: newEvent.notes,
+      color: newEvent.color,
+      icon: newEvent.icon,
+      completed: newEvent.completed
     };
     try {
       const eventRef = doc(collection(db, 'artifacts', appId, 'users', user.uid, 'events'), eventId);
@@ -505,6 +511,27 @@ export default function App() {
 
   const openViewModal = (e, event) => { e.stopPropagation(); setSelectedEvent(event); setIsViewModalOpen(true); };
   const closeViewModal = () => { setIsViewModalOpen(false); setTimeout(() => setSelectedEvent(null), 200); };
+
+  const handleEditClick = () => {
+    const d = new Date(selectedEvent.date);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    setSelectedDate(`${y}-${m}-${day}`);
+
+    setNewEvent({
+      id: selectedEvent.id,
+      title: selectedEvent.title || '',
+      time: selectedEvent.time || '',
+      link: selectedEvent.link || '',
+      notes: selectedEvent.notes || '',
+      color: selectedEvent.color || PASTEL_COLORS[0].class,
+      icon: selectedEvent.icon || ICONS[0].id,
+      completed: selectedEvent.completed || false
+    });
+    setIsViewModalOpen(false);
+    setIsAddModalOpen(true);
+  };
 
   const handleDeleteEvent = async () => {
     if (selectedEvent && user) {
@@ -874,7 +901,7 @@ export default function App() {
         {isAddModalOpen && (
           <div className="modal-overlay" onClick={closeAddModal}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
-              <h3>Nuevo Evento</h3>
+              <h3>{newEvent.id ? 'Editar Evento' : 'Nuevo Evento'}</h3>
               <p className="modal-subtitle">{getFormattedSelectedDate()}</p>
               
               <form onSubmit={handleSaveEvent}>
@@ -974,6 +1001,7 @@ export default function App() {
               
               <div className="modal-actions" style={{ marginTop: '16px' }}>
                 <button type="button" className="btn btn-cancel pill" onClick={closeViewModal}>Cerrar</button>
+                <button type="button" className="btn btn-save pill" onClick={handleEditClick}>Editar</button>
               </div>
 
             </div>
